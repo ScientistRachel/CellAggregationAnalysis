@@ -68,13 +68,16 @@ param.umperpix = umperpix;
 
 % Plots
 areaBins = logspace(2,7,50); % bins for area histogram
+param.areaBins = areaBins;
 
 % Make sure places for saving things exist
 if ~exist(savedir,'file')
     mkdir(savedir)
 end
-if ~exist([savedir '\CroppedImages\'],'file')
-    mkdir([savedir '\CroppedImages\'])
+if strcmp(imageType,'CircularWell')
+    if ~exist([savedir '\CroppedImages\'],'file')
+        mkdir([savedir '\CroppedImages\'])
+    end
 end
 if ~exist([savedir '\ClusterImages\'],'file')
     mkdir([savedir '\ClusterImages\'])
