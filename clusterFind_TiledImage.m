@@ -10,6 +10,7 @@
 % Change Log
 % 2019/03/14 RML organized and cleaned up code
 % 2020/05/22 RML added option to run on circular wells or Ibidi slides
+% 2020/11/12 RML convert '\' to filesep for better compatibility
 
 clc
 clear
@@ -75,15 +76,15 @@ if ~exist(savedir,'file')
     mkdir(savedir)
 end
 if strcmp(imageType,'CircularWell')
-    if ~exist([savedir '\CroppedImages\'],'file')
-        mkdir([savedir '\CroppedImages\'])
+    if ~exist([savedir filesep 'CroppedImages' filesep],'file')
+        mkdir([savedir filesep 'CroppedImages' filesep])
     end
 end
-if ~exist([savedir '\ClusterImages\'],'file')
-    mkdir([savedir '\ClusterImages\'])
+if ~exist([savedir filesep 'ClusterImages' filesep],'file')
+    mkdir([savedir filesep 'ClusterImages' filesep])
 end
-if ~exist([savedir '\IndividualStats\'],'file')
-    mkdir([savedir '\IndividualStats\'])
+if ~exist([savedir filesep 'IndividualStats' filesep],'file')
+    mkdir([savedir filesep 'IndividualStats' filesep])
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -177,7 +178,7 @@ for kk = 1:length(directories)  % go through all the folders
                 image = double(image_orig).*mask;
 
                 %%%%% Save cropped image
-                imwrite(imadjust(image_orig),[savedir '\CroppedImages\' dir_tag '_' list(jj).name(1:end-4) '.png'],'png','alpha',uint16((2^16-1)*BWraw))
+                imwrite(imadjust(image_orig),[savedir filesep 'CroppedImages' filesep dir_tag '_' list(jj).name(1:end-4) '.png'],'png','alpha',uint16((2^16-1)*BWraw))
 
                 save([directory list(jj).name(1:end-4) '_croppedImage.mat'],'image_orig','image','BWraw','manualFind','param','-v7.3')
                 clear mask baddies L R T B
@@ -283,7 +284,7 @@ for kk = 1:length(directories)  % go through all the folders
             set(h,'alphadata',~(BW==0)); % don't show the empty regions
             colormap lines
             axis off
-            saveas(gcf,[savedir '\ClusterImages\' dir_tag '_' list(jj).name(1:end-4) '_bwlabelClusters.png'],'png')
+            saveas(gcf,[savedir filesep 'ClusterImages' filesep dir_tag '_' list(jj).name(1:end-4) '_bwlabelClusters.png'],'png')
 
             % plot clusters on image
             edg = bwboundaries(BW);
@@ -298,8 +299,8 @@ for kk = 1:length(directories)  % go through all the folders
                 plot(edg{mm}(:,2),edg{mm}(:,1),'LineWidth',1)
             end
             hold off
-            saveas(gcf,[savedir '\ClusterImages\' dir_tag '_' list(jj).name(1:end-4) '_clusterEdges.png'],'png')
-            saveas(gcf,[savedir '\ClusterImages\' dir_tag '_' list(jj).name(1:end-4) '_clusterEdges.fig'],'fig')
+            saveas(gcf,[savedir filesep 'ClusterImages' filesep dir_tag '_' list(jj).name(1:end-4) '_clusterEdges.png'],'png')
+            saveas(gcf,[savedir filesep 'ClusterImages' filesep dir_tag '_' list(jj).name(1:end-4) '_clusterEdges.fig'],'fig')
             clear image_orig edg
 
             A_all = regionprops(BW,'area');
@@ -320,7 +321,7 @@ for kk = 1:length(directories)  % go through all the folders
             xlim([min(areaBins) max(areaBins)])
             title({['N = ' num2str(N) ' clusters']; ['Max Cluster = ' num2str(maxA,'%0.1f')] ; ['Median Cluster = ' num2str(medA,'%0.1f')]})
             box off
-            saveas(gcf,[savedir '\IndividualStats\' dir_tag '_' list(jj).name(1:end-4) '_areaDistribution.png'],'png')
+            saveas(gcf,[savedir filesep 'IndividualStats' filesep dir_tag '_' list(jj).name(1:end-4) '_areaDistribution.png'],'png')
             
 
             save([directory list(jj).name(1:end-4) '_areaStats.mat'],'A','N','maxA','medA','minA','umperpix','param')

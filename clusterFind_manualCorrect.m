@@ -22,6 +22,7 @@ areaBins = logspace(2,7,50); % bins for area histogram
 % Change Log
 % 2020/05/22 RML created this as an option for users who want to be able to
 % manual fix the cluster finding to remove dust, etc.
+% 2020/11/12 RML create directories as necessary, make directory names work on both mac & pc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% RUN THE ANALYSIS
@@ -34,7 +35,7 @@ if exist('BWraw','var')
     BWrawFlag = 1;
 end
 % For later saving:
-dir_tag = strsplit(directory,'\');
+dir_tag = strsplit(directory,filesep);
 dir_tag = dir_tag{end-1}; % Folder name for nice saving
 
 % Don't delete original finding
@@ -108,8 +109,11 @@ else
 end
 
 %%% When the user is done, save their work as an image as well
-saveas(gcf,[savedir '\ClusterImages\' dir_tag '_' fileName '_clusterEdges_manualCorrect.png'],'png')
-saveas(gcf,[savedir '\ClusterImages\' dir_tag '_' fileName '_clusterEdges_manualCorrect.fig'],'fig')
+if ~exist([savedir filesep 'ClusterImages' filesep],'file')
+    mkdir(savedir,'ClusterImages')
+end
+saveas(gcf,[savedir filesep 'ClusterImages' filesep dir_tag '_' fileName '_clusterEdges_manualCorrect.png'],'png')
+saveas(gcf,[savedir filesep 'ClusterImages' filesep dir_tag '_' fileName '_clusterEdges_manualCorrect.fig'],'fig')
 
 %% Finally, redo area stats        
 
@@ -141,8 +145,11 @@ ylabel('Fraction','FontSize',20)
 xlim([min(areaBins) max(areaBins)])
 title({['N = ' num2str(N) ' clusters']; ['Max Cluster = ' num2str(maxA,'%0.1f')] ; ['Median Cluster = ' num2str(medA,'%0.1f')]})
 box off
-saveas(gcf,[savedir '\IndividualStats\' dir_tag '_' fileName '_areaDistribution_manualCorrect.png'],'png')
 
+if ~exist([savedir filesep 'IndividualStats' filesep],'file')
+    mkdir(savedir,'IndividualStats')
+end
+saveas(gcf,[savedir filesep 'IndividualStats' filesep dir_tag '_' fileName '_areaDistribution_manualCorrect.png'],'png')
 
 save([directory fileName '_areaStats.mat'],'A','N','maxA','medA','minA','umperpix','param','Aorig','Norig','maxAorig','medAorig','minAorig')
 disp('Analysis Complete')  
