@@ -11,6 +11,7 @@
 % 2019/03/14 RML organized and cleaned up code
 % 2020/05/22 RML added option to run on circular wells or Ibidi slides
 % 2020/11/12 RML convert '\' to filesep for better compatibility
+% 2020/11/16 RML added option to manually find circular wells purposefully
 
 clc
 clear
@@ -18,9 +19,13 @@ close all
 
 %%%%%% USER PARAMETERS
 % Where are the images to be analyzed (images expected to be in tif format)
-directories = {'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\IbidiSlide\'};
-imageType = 'IbidiSlide'; % Valid choices are 'CircularWell' and 'IbidiSlide'
-fullyTiled = 'yes'; % Only relevant if imageType is CircularWell. Choose 'yes' if tiling includes all corners of the image or 'no' if the microscope skipped fields in the corners outside the well
+directories = {'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\CircularWell\'};
+imageType = 'CircularWell'; % Valid choices are 'CircularWell' and 'IbidiSlide'
+fullyTiled = 'manual'; % Only relevant if imageType is CircularWell:
+% Choose 'yes' if tiling includes all corners of the image or 'no' if the
+% microscope skipped fields in the corners outside the well.
+% Choose 'manual' for fullyTiled if you would like to manually click four
+% locations to identify the location of the well.
 
 % Where should the results be saved
 savedir = 'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\IbidiSlide\ExampleOutput\';
@@ -54,7 +59,7 @@ param.rmax = 25; % Largest LoG filter
 rArray = param.rmin:param.rmax; % Sizes of filters to use, based on user input above
 
 % Finding
-param.edgeThresh = 9; % Keep edges greater than this manual thresh
+param.edgeThresh = 0.5; % Keep edges greater than this manual thresh
 % Note: for example images, 0.5 works well for the CircularWell, while 9 works well for the IbidiSlides
 param.minSize = 76; % Anything smaller than this doesn't make sense (rough cell size = 20um diameter --> pi*10^2/umperpix = ~200 pixels)
 disp(['Sanity check: your minSize parameter corresponds to ' num2str(param.minSize*umperpix) ' ' char(181) 'm'])
@@ -134,6 +139,18 @@ for kk = 1:length(directories)  % go through all the folders
                         BWraw = 1-BWraw; % Invert black and white
                         BWraw = bwareaopen(BWraw,param.wellSizeNoise);
                         BWraw = imfill(BWraw,'holes');
+                    elseif strcmp(fullyTiled,'manual') || strcmp(fullyTiled,'Manual')
+                        manualFind = 1;
+
+                        imshow(imadjust(image_orig))
+
+                        [x,y] = ginput(4);
+                        [xc, yc, Rc] = circfit(x,y);
+                        [X,Y] = meshgrid(1:size(image_orig,1),1:size(image_orig,2));
+                        R = sqrt((X-xc).^2 + (Y-yc).^2);
+                        BWraw = R < Rc;
+
+                        close all
                     else
                         error('Please use the variable fullyTiled to indicate whether the entire image is filled (''yes'') or if there are empty regions in the corners (''no'')')
                     end
