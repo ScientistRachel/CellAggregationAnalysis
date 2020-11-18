@@ -130,12 +130,12 @@ minA = min(A);
 medA = median(A);
 
 %%%% Original areas
-A_all = regionprops(BW,'area');
+A_all = regionprops(BWorig,'area');
 Aorig = (umperpix.^2)*[A_all.Area];
-Norig = length(A);
-maxAorig = max(A);
-minAorig = min(A);
-medAorig = median(A);
+Norig = length(Aorig);
+maxAorig = max(Aorig);
+minAorig = min(Aorig);
+medAorig = median(Aorig);
 
 figure(2)
 histogram(A,areaBins,'Normalization','probability')
