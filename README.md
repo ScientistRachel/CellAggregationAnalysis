@@ -2,7 +2,7 @@
 This code was developed to analyze images of cell clusters formed through aggregation.  A Laplacian of Gaussian (LoG) filter is used to find objects in a fluorescent microscope image.  The number of clusters as well as statistics on the cluster areas are reported as output.
 
 ## Dependencies
-This code includes the function `circfit.m` from the MATLAB file exchange:
+This repository includes the function `circfit.m` from the MATLAB file exchange:
 > Izhak Bucher (2020). Circle fit (https://www.mathworks.com/matlabcentral/fileexchange/5557-circle-fit), MATLAB Central File Exchange. Retrieved May 21, 2020.
 
 The function `DecomposedMexiHat.m` was developed by Leonard Campanello ([@ljcamp1624](https://github.com/ljcamp1624)) in the lab of Wolfgang Losert ([@losertlab](https://github.com/losertlab)).
