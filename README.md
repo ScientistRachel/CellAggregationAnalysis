@@ -1,6 +1,9 @@
 # CellAggregationAnalysis
 This code was developed to analyze images of cell clusters formed through aggregation.  A Laplacian of Gaussian (LoG) filter is used to find objects in a fluorescent microscope image.  The number of clusters as well as statistics on the cluster areas are reported as output.
 
+The initialized repository version of this analysis was used in:
+> Thompson, Keyata N., Julia A. Ju, Eleanor C Ory, Stephen J.P. Pratt, Rachel M Lee, Trevor Mathias, Cornell Lee, et al. “Microtubule Disruption Reduces Metastasis More Effectively Than Primary Tumor Growth.” In Review | Breast Cancer Research, December 18, 2020. https://doi.org/10.21203/rs.3.rs-127507/v1.
+
 ## Dependencies
 This repository includes the function `circfit.m` from the MATLAB file exchange:
 > Izhak Bucher (2020). Circle fit (https://www.mathworks.com/matlabcentral/fileexchange/5557-circle-fit), MATLAB Central File Exchange. Retrieved May 21, 2020.
