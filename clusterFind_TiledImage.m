@@ -12,6 +12,11 @@
 % 2020/05/22 RML added option to run on circular wells or Ibidi slides
 % 2020/11/12 RML convert '\' to filesep for better compatibility
 % 2020/11/16 RML added option to manually find circular wells purposefully
+% 2021/06/29 RML save directory for each input directory instead of one
+%            output directory, fixed units error on min size sanity check,
+%            cleaned up disp output, added option to remove edges from
+%            Ibidi slides
+% 2021/09/09 RML add Excel output, double check directory formatting
 
 clc
 clear
@@ -19,27 +24,27 @@ close all
 
 %%%%%% USER PARAMETERS
 % Where are the images to be analyzed (images expected to be in tif format)
-directories = {'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\CircularWell\'};
-imageType = 'CircularWell'; % Valid choices are 'CircularWell' and 'IbidiSlide'
-fullyTiled = 'manual'; % Only relevant if imageType is CircularWell:
+directories = {'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\IbidiSlide_newCamera\231TD_T0h\',...
+    'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\IbidiSlide_newCamera\231TD_T4h\'};
+% Image resolution
+umperpix = 1.625;
+
+imageType = 'IbidiSlide'; % Valid choices are 'CircularWell' and 'IbidiSlide'
+
+% Only relevant if imageType is CircularWell:
+fullyTiled = ''; 
 % Choose 'yes' if tiling includes all corners of the image or 'no' if the
 % microscope skipped fields in the corners outside the well.
 % Choose 'manual' for fullyTiled if you would like to manually click four
 % locations to identify the location of the well.
 
-% Where should the results be saved
-savedir = 'D:\Code\_GitHubRepositories\CellAggregationAnalysis\ExampleImages\IbidiSlide\ExampleOutput\';
-
-% Image resolution
-umperpix = 1.6125;
-
 % Set to 1 to replace already completed analysis or to 0 to skip previously analyzed files
 % Important: if you change any parameters, you need to ovewrite all
 % sections or it will re-load old parameters from older files.
-overwrite(1) = 1; % Re-crop (and downsize) image
-overwrite(2) = 1; % Redo filtering
-overwrite(3) = 1; % Remake BW image
-overwrite(4) = 1; % Recalculate area statistics
+overwrite(1) = 0; % Re-crop (and downsize) image
+overwrite(2) = 0; % Redo filtering
+overwrite(3) = 0; % Remake BW image
+overwrite(4) = 0; % Recalculate area statistics
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% "CONSTANT" PARAMETERS
@@ -47,10 +52,18 @@ overwrite(4) = 1; % Recalculate area statistics
 % be run with the same set of these parameters for fair comparisons.
 
 % For finding the interior of the well <-- These are dependent on image resolution
-param.wellSizeNoise = 1000000; % Rough estimate of the size for filtering
-param.edgeConnect = 100; % Size of 'line' from strel for closing image
-param.wellSizeEdge = 150; % How big of a rim is there around the well that should be removed?
 %%%% Note: above parameters are only used if imageType = 'CircularWell'
+if strcmp(imageType,'CircularWell')
+    param.wellSizeNoise = 1000000; % Rough estimate of the size for filtering
+    param.edgeConnect = 100; % Size of 'line' from strel for closing image
+    param.wellSizeEdge = 150; % How big of a rim is there around the well that should be removed?
+end
+if strcmp(imageType,'IbidiSlide')
+    param.edgeRemove = 1; % When set to 1 will remove pixels around the edge to avoid edge effects, set to 0 to turn off
+    if param.edgeRemove
+        param.edgeSize = 25; % Number of pixels to remove around the edge
+    end
+end
 
 % Filtering
 param.gaussNoise = 2; % Smooth the image to get rid of salt and pepper noise
@@ -59,11 +72,13 @@ param.rmax = 25; % Largest LoG filter
 rArray = param.rmin:param.rmax; % Sizes of filters to use, based on user input above
 
 % Finding
-param.edgeThresh = 0.5; % Keep edges greater than this manual thresh
-% Note: for example images, 0.5 works well for the CircularWell, while 9 works well for the IbidiSlides
+param.edgeThresh = 15; % Keep edges greater than this manual thresh
+% Note: for example images, 0.5 works well for the CircularWell, while 15
+% works well for the IbidiSlides (9 worked well for the old camera)
 param.minSize = 76; % Anything smaller than this doesn't make sense (rough cell size = 20um diameter --> pi*10^2/umperpix = ~200 pixels)
-disp(['Sanity check: your minSize parameter corresponds to ' num2str(param.minSize*umperpix) ' ' char(181) 'm'])
-param.closeSize = 5; % What size should be used to smooth over clusters?
+disp(['Sanity check: your minSize parameter corresponds to A = ' num2str(param.minSize*umperpix^2,'%0.0f') ' ' char(181) 'm^2 / r = ' num2str(sqrt(param.minSize*umperpix^2/pi),'%0.2f') ' ' char(181) 'm'])
+disp(' ')
+param.closeSize = 2; % What size should be used to smooth over clusters? (Previously used 5 but this was too much smoothing)
 
 % Save user inputs as well
 param.imageType = imageType;
@@ -76,33 +91,60 @@ param.umperpix = umperpix;
 areaBins = logspace(2,7,50); % bins for area histogram
 param.areaBins = areaBins;
 
-% Make sure places for saving things exist
-if ~exist(savedir,'file')
-    mkdir(savedir)
-end
-if strcmp(imageType,'CircularWell')
-    if ~exist([savedir filesep 'CroppedImages' filesep],'file')
-        mkdir([savedir filesep 'CroppedImages' filesep])
-    end
-end
-if ~exist([savedir filesep 'ClusterImages' filesep],'file')
-    mkdir([savedir filesep 'ClusterImages' filesep])
-end
-if ~exist([savedir filesep 'IndividualStats' filesep],'file')
-    mkdir([savedir filesep 'IndividualStats' filesep])
-end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%% RUN THE ANALYSIS
 for kk = 1:length(directories)  % go through all the folders
     
+    tic
+    
     directory = directories{kk};
+    % Format the directory string correctly
+    if ~strcmp(directory(end),filesep)
+        directory = [directories{kk} filesep];
+    end
+    
+    % Get folder name for later saving
     dir_tag = strsplit(directory,'\');
-    dir_tag = dir_tag{end-1}; % Folder name for nice saving
+    dir_tag = dir_tag{end-1};
+    
+    % Find all the images
     list = dir([directory '*.tif']);
+    if isempty(list)
+        error('No images found')
+    end        
+    
+    % Make sure places for saving things exist
+    savedir = [directory 'AnalysisOutput\'];
+    if ~exist(savedir,'file')
+        mkdir(savedir)
+    end
+    if strcmp(imageType,'CircularWell')
+        if ~exist([savedir filesep 'CroppedImages' filesep],'file')
+            mkdir([savedir filesep 'CroppedImages' filesep])
+        end
+    end
+    if ~exist([savedir filesep 'ClusterImages' filesep],'file')
+        mkdir([savedir filesep 'ClusterImages' filesep])
+    end
+    if ~exist([savedir filesep 'IndividualStats' filesep],'file')
+        mkdir([savedir filesep 'IndividualStats' filesep])
+    end
+    
+    %%%% Set up an excel file
+    excelFile = [savedir dir_tag '.xlsx'];
+    warning('off','MATLAB:xlswrite:AddSheet')
+    if exist(excelFile,'file')
+        warning(['Overwriting Excel file for ' directory])
+    end
+    headerText1 = {'Filename','Number of Clusters',['Median Cluster (' char(181) 'm^2)'],['Maximum Cluster (' char(181) 'm^2)']};
+    headerText2 = {'Filename',['All Areas (' char(181) 'm^2)']};
+    writecell(headerText1,excelFile,'Sheet',1)
+    writecell(headerText2,excelFile,'Sheet',2)
+    warning('on','MATLAB:xlswrite:AddSheet')
     
     for jj = 1:length(list) % go through all of the images files in the current folder
-        tic
+
         disp([dir_tag '  ' list(jj).name])
         
         if ~exist([directory list(jj).name(1:end-4) '_croppedImage.mat'],'file') || overwrite(1)
@@ -222,11 +264,11 @@ for kk = 1:length(directories)  % go through all the folders
             image = imgaussfilt(uint16(image),param.gaussNoise); % remove speckly noise        
             filteredImage = zeros([size(image), length(rArray)]); % Preallocate storage
             
-            disp('   beginning edge filtering')
+            fprintf('   beginning edge filtering,')
             % Loop through filter sizes:
             for ii = 1:length(rArray)
                 rCurr = rArray(ii);
-                disp(rCurr)
+                fprintf(' %u,',rCurr)
                 [a1,a2,b1,b2] = DecomposedMexiHat(rCurr);
                 filteredImage(:, :, ii) = imfilter(imfilter(image, a1), b1) + imfilter(imfilter(image, a2), b2);    
             end
@@ -238,7 +280,7 @@ for kk = 1:length(directories)  % go through all the folders
                 error('imageType must be one of two options: ''IbidiSlide'' or ''CircularWell''')
             end
             clear rCurr a1 a2 b1 b2 image_orig
-            disp('   edge filtering complete')
+            disp(' edge filtering complete')
         end
         
         
@@ -252,9 +294,15 @@ for kk = 1:length(directories)  % go through all the folders
             % Max projection = clearest edges:
             maxProjImage = max(filteredImage, [], 3);
 
+            % Clean up unreasonable regions
             if strcmp(imageType,'CircularWell')
                 BWraw = imerode(BWraw,strel('disk',param.wellSizeEdge)); % Remove the edge of the well
                 maxProjImage = maxProjImage.*double(BWraw);
+            elseif strcmp(imageType,'IbidiSlide') && param.edgeRemove
+                maxProjImage(1:param.edgeSize,:) = 0;
+                maxProjImage(:,1:param.edgeSize) = 0;
+                maxProjImage(:,end-param.edgeSize-1:end) = 0;                
+                maxProjImage(end-param.edgeSize-1:end,:) = 0;
             end
 
             clear filteredImage
@@ -343,19 +391,37 @@ for kk = 1:length(directories)  % go through all the folders
 
             save([directory list(jj).name(1:end-4) '_areaStats.mat'],'A','N','maxA','medA','minA','umperpix','param')
             disp('   areas saved')  
-            clear image
+            clear image            
             
         end
         
-        % Clean up
+        %%%% Excel output
+        if ~exist('maxA','var') % if analysis already exists for this file, load it to add to the Excel file
+            load([directory list(jj).name(1:end-4) '_areaStats.mat'])
+        end
+        
+        writematrix(list(jj).name,excelFile,'Sheet',1,'Range',['A' num2str(jj+1)])
+        writematrix(list(jj).name,excelFile,'Sheet',2,'Range',['A' num2str(jj+1)])
+
+        writematrix(N,excelFile,'Sheet',1,'Range',['B' num2str(jj+1)])
+        writematrix(medA,excelFile,'Sheet',1,'Range',['C' num2str(jj+1)])
+        writematrix(maxA,excelFile,'Sheet',1,'Range',['D' num2str(jj+1)])
+
+        writematrix(A(:)',excelFile,'Sheet',2,'Range',['B' num2str(jj+1)])
+        
+        %%%% Clean up
         close all
         clear BW
-        toc
+        
     end
+    
+    disp(' ')
+    toc
     
 end
 
-%% Clean up when finished
+%%%% Clean up when finished
 clear image
 close all
+disp(' ')
 disp('Batch Complete')

@@ -8,6 +8,8 @@ The initialized repository version of this analysis was used in:
 This repository includes the function `circfit.m` from the MATLAB file exchange:
 > Izhak Bucher (2020). Circle fit (https://www.mathworks.com/matlabcentral/fileexchange/5557-circle-fit), MATLAB Central File Exchange. Retrieved May 21, 2020.
 
+To use convertND2.m, you will need to download OME's Bio-Format's toolbox for MATLAB.  See the OME website for more details: [https://www.openmicroscopy.org/bio-formats/downloads/](https://www.openmicroscopy.org/bio-formats/downloads/).
+
 The function `DecomposedMexiHat.m` was developed by Leonard Campanello ([@ljcamp1624](https://github.com/ljcamp1624)) in the lab of Wolfgang Losert ([@losertlab](https://github.com/losertlab)).
 
 ## Using the Code
