@@ -5,7 +5,7 @@
 % Dependencies
 % This script uses circfit.m, which is available on the MATLAB file exchange: 
 % Izhak Bucher (2020). Circle fit (https://www.mathworks.com/matlabcentral/fileexchange/5557-circle-fit), MATLAB Central File Exchange. Retrieved May 21, 2020.
-% This script also requires the subfunction DecomposedMexiHat.m
+% This script also requires the subfunction DecomposedLoG.m
 
 % Change Log
 % 2019/03/14 RML organized and cleaned up code
@@ -17,6 +17,7 @@
 %            cleaned up disp output, added option to remove edges from
 %            Ibidi slides
 % 2021/09/09 RML add Excel output, double check directory formatting
+% 2021/10/26 RML update LoG function name
 
 clc
 clear
@@ -269,7 +270,7 @@ for kk = 1:length(directories)  % go through all the folders
             for ii = 1:length(rArray)
                 rCurr = rArray(ii);
                 fprintf(' %u,',rCurr)
-                [a1,a2,b1,b2] = DecomposedMexiHat(rCurr);
+                [a1,a2,b1,b2] = DecomposedLoG(rCurr);
                 filteredImage(:, :, ii) = imfilter(imfilter(image, a1), b1) + imfilter(imfilter(image, a2), b2);    
             end
             if strcmp(imageType,'CircularWell')

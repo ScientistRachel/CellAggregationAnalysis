@@ -1,9 +1,11 @@
-% Usage [xFil1, yFil1, xFil2, yFil2] = DecomposedMexiHat(hatRadius)
-function [xFil1, yFil1, xFil2, yFil2] = DecomposedMexiHat(hatRadius)
+% Usage [xFil1, yFil1, xFil2, yFil2] = DecomposedLoG(hatRadius)
+function [xFil1, yFil1, xFil2, yFil2] = DecomposedLoG(hatRadius)
 
 % This function was developed by Lenny Campanello (ljcamp@umd.edu) in the
 % lab of Wolfgang Losert (wlosert@umd.edu).  Please contact them for the
 % correct citation to acknowledge if using this work.
+
+% 2021/10/26 RML updated function name
 
 cylRadiusFac = 3; 
 kernelSize = cylRadiusFac*hatRadius;
